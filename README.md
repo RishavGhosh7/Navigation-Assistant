@@ -1,26 +1,26 @@
-# Navigation App
+# Navigation Assistant
 
-A responsive web-based navigation application similar to Google Maps, built with React, Node.js, and Mapbox.
+A simple, responsive web-based navigation application built with React and Leaflet. No authentication required - just pure maps functionality!
 
 ## Features
 
 - 🗺️ Interactive map with OpenStreetMap + Leaflet
 - 🔍 Location search with autocomplete
-- 🛣️ Turn-by-turn routing with traffic data
+- 🛣️ Turn-by-turn routing with real-time data
 - 🚀 Simple and lightweight - no authentication required
 - 📱 Responsive design for all devices
-- 🚦 Free and open-source mapping
+- 🚦 Completely free and open-source mapping
+- 🎯 Voice-guided navigation interface
 
 ## Tech Stack
 
-- **Frontend**: React + JavaScript + Vite (No TypeScript)
-- **Backend**: Node.js + Express
-- **Database**: SQLite
+- **Frontend**: React + JavaScript + Vite
+- **Backend**: Node.js + Express (minimal API)
 - **Maps**: OpenStreetMap + Leaflet (Free!)
 - **Routing**: OSRM (Open Source Routing Machine)
 - **Geocoding**: Nominatim (OpenStreetMap)
 - **Styling**: Tailwind CSS
-- **Authentication**: None (simplified)
+- **Authentication**: None - completely open!
 
 ## Quick Start
 
@@ -28,30 +28,30 @@ A responsive web-based navigation application similar to Google Maps, built with
 
 - Node.js (v16 or higher)
 - npm or yarn
-- Mapbox account and access token
 
 ### 1. Clone and Setup
 
 ```bash
-git clone <your-repo-url>
-cd navigation-app
+git clone https://github.com/RishavGhosh7/Navigation-Assistant.git
+cd Navigation-Assistant
 ```
 
-### 2. Backend Setup (Optional - not needed for basic functionality)
+### 2. Install Dependencies
 
 ```bash
-cd server
+# Install root dependencies
 npm install
-# No environment variables needed
-npm run dev
+
+# Install client dependencies
+cd client
+npm install
 ```
 
-### 3. Frontend Setup
+### 3. Start Development
 
 ```bash
+# Start the client (main app)
 cd client
-npm install --legacy-peer-deps
-# No API keys needed - completely free!
 npm run dev
 ```
 
@@ -67,20 +67,7 @@ No registration or API keys needed!
 
 ## Environment Variables
 
-### Backend (.env)
-
-```
-PORT=3001
-JWT_SECRET=your_super_secret_jwt_key_here
-NODE_ENV=development
-```
-
-### Frontend (.env)
-
-```
-VITE_MAPBOX_ACCESS_TOKEN=your_mapbox_access_token_here
-VITE_API_BASE_URL=http://localhost:3001/api
-```
+**None required!** This app works out of the box with no configuration needed.
 
 ## Project Structure
 
@@ -89,49 +76,39 @@ VITE_API_BASE_URL=http://localhost:3001/api
 ├── client/                 # React frontend
 │   ├── src/
 │   │   ├── components/    # Reusable UI components
-│   │   ├── pages/        # Main pages
-│   │   ├── services/     # API calls
-│   │   └── context/      # React context
+│   │   ├── pages/        # Main pages (HomePage, NavigationPage)
+│   │   └── services/     # External API calls (OSRM, Nominatim)
 │   └── package.json
-├── server/                # Node.js backend
-│   ├── routes/           # API endpoints
-│   ├── middleware/       # Auth middleware
-│   └── database.js       # SQLite setup
+├── api/                   # Minimal Express API
+│   └── index.js          # Basic health check endpoint
+├── vercel.json           # Vercel deployment config
 └── README.md
 ```
 
 ## API Endpoints
 
-### Authentication
+### Basic API
 
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
+- `GET /api/status` - Health check
+- `GET /api` - API info
 
-### Routes (Protected)
+### External APIs Used
 
-- `GET /api/routes/history` - Get user's route history
-- `POST /api/routes/save` - Save a new route
-- `DELETE /api/routes/:id` - Delete a route
+- **OSRM** - Route calculation
+- **Nominatim** - Location search and geocoding
+- **OpenStreetMap** - Map tiles
 
 ## Usage
 
-1. **Register/Login**: Create an account or sign in
+1. **Open the App**: Visit the homepage to get started
 2. **Search Locations**: Use the search bars to find start and end points
-3. **View Routes**: See calculated routes with distance, duration, and traffic
-4. **Save Routes**: Save frequently used routes to your history
-5. **View History**: Access all your saved routes on the history page
+3. **View Routes**: See calculated routes with distance, duration, and turn-by-turn directions
+4. **Navigate**: Follow the voice-guided directions
+5. **Explore**: Use the interactive map to discover new places
 
 ## Development
 
-### Backend
-
-```bash
-cd server
-npm run dev  # Development with auto-reload
-npm start    # Production
-```
-
-### Frontend
+### Frontend Only
 
 ```bash
 cd client
@@ -141,11 +118,31 @@ npm run build # Production build
 
 ## Deployment
 
-The app can be deployed to any platform that supports Node.js and static hosting:
+### Vercel (Recommended)
 
-- **Backend**: Heroku, Railway, DigitalOcean, AWS
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Deploy automatically!
+
+The app is already configured for Vercel deployment with `vercel.json`.
+
+### Other Platforms
+
 - **Frontend**: Vercel, Netlify, GitHub Pages
+- **Backend**: Not required for basic functionality
+
+## Live Demo
+
+🌐 **Live App**: [navigation-assistant-three.vercel.app](https://navigation-assistant-three.vercel.app)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-MIT License
+MIT License - feel free to use this project for your own needs!

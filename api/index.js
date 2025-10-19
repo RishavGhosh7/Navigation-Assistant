@@ -1,10 +1,5 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-import "./database.js"; // Initialize database
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 
@@ -19,7 +14,7 @@ app.get("/api/status", (req, res) => {
 
 // Root API endpoint
 app.get("/api", (req, res) => {
-  res.json({ message: "Navigation Assistant API", version: "1.0.0" });
+  res.json({ message: "Maps API", version: "1.0.0" });
 });
 
 // Error handling middleware

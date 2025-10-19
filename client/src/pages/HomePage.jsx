@@ -20,9 +20,9 @@ export const HomePage = ({ onNavigateToMap }) => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="text-gray-600 hover:text-gray-800 font-medium">
-                Sign in
-              </button>
+              <div className="text-gray-600 font-medium">
+                Navigation Assistant
+              </div>
             </div>
           </div>
         </div>
