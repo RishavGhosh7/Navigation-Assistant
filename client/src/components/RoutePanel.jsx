@@ -5,6 +5,7 @@ export const RoutePanel = ({
   routeInfo,
   onStartNavigation,
   onClearRoute,
+  onShare,
   isNavigating = false,
   className = "",
 }) => {
@@ -195,7 +196,10 @@ export const RoutePanel = ({
             <button className="flex-1 py-2 px-4 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium">
               Details
             </button>
-            <button className="flex-1 py-2 px-4 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium">
+            <button
+              onClick={onShare}
+              className="flex-1 py-2 px-4 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium"
+            >
               Share
             </button>
           </div>

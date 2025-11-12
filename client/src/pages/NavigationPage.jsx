@@ -213,36 +213,61 @@ export const NavigationPage = ({ onNavigateToHome }) => {
   };
 
   // Share handlers
-  const handleShare = () => {
-    if (navigator.share && routeInfo) {
-      navigator
-        .share({
-          title: "Navigation Route",
-          text: `Route from ${origin?.address} to ${destination?.address}`,
-          url: window.location.href,
-        })
-        .catch(console.error);
-    } else {
-      // Fallback to clipboard
-      const shareText = `Route: ${origin?.address} → ${
-        destination?.address
-      }\nDistance: ${
-        routeInfo?.distance
-          ? (routeInfo.distance / 1000).toFixed(1) + " km"
-          : "N/A"
-      }\nDuration: ${
-        routeInfo?.duration
-          ? Math.round(routeInfo.duration / 60) + " min"
-          : "N/A"
-      }`;
-      navigator.clipboard
-        .writeText(shareText)
-        .then(() => {
-          alert("Route copied to clipboard!");
-        })
-        .catch(console.error);
+  const generateShareUrl = () => {
+    if (!origin || !destination) return window.location.href;
+
+    const params = new URLSearchParams({
+      origin: `${origin.lat},${origin.lng}`,
+      originAddress: origin.address,
+      destination: `${destination.lat},${destination.lng}`,
+      destinationAddress: destination.address,
+    });
+
+    return `${window.location.origin}${
+      window.location.pathname
+    }?${params.toString()}`;
+  };
+
+  const handleShare = async () => {
+    if (!routeInfo || !origin || !destination) {
+      alert("Please select a route first");
+      return;
     }
-    setShowShareModal(false);
+
+    const shareUrl = generateShareUrl();
+    const shareText = `Route: ${origin.address} → ${
+      destination.address
+    }\nDistance: ${(routeInfo.distance / 1000).toFixed(
+      1
+    )} km\nDuration: ${Math.round(
+      routeInfo.duration / 60
+    )} min\n\nView route: ${shareUrl}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Navigation Route",
+          text: `Route from ${origin.address} to ${destination.address}`,
+          url: shareUrl,
+        });
+        setShowShareModal(false);
+      } catch (error) {
+        // User cancelled or error occurred, fall through to clipboard
+        if (error.name !== "AbortError") {
+          console.error("Share error:", error);
+        }
+      }
+    }
+
+    // Fallback to clipboard
+    try {
+      await navigator.clipboard.writeText(shareText);
+      alert("Route copied to clipboard!");
+      setShowShareModal(false);
+    } catch (error) {
+      console.error("Clipboard error:", error);
+      alert("Failed to copy route. Please try again.");
+    }
   };
 
   // Voice assistant functions
@@ -442,6 +467,51 @@ export const NavigationPage = ({ onNavigateToHome }) => {
     getCurrentLocation();
     initializeVoice();
   }, [getCurrentLocation, initializeVoice]);
+
+  // Parse URL parameters to restore shared route
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const originParam = params.get("origin");
+    const originAddress = params.get("originAddress");
+    const destinationParam = params.get("destination");
+    const destinationAddress = params.get("destinationAddress");
+
+    if (
+      originParam &&
+      destinationParam &&
+      originAddress &&
+      destinationAddress
+    ) {
+      try {
+        const [originLat, originLng] = originParam.split(",").map(Number);
+        const [destLat, destLng] = destinationParam.split(",").map(Number);
+
+        if (
+          !isNaN(originLat) &&
+          !isNaN(originLng) &&
+          !isNaN(destLat) &&
+          !isNaN(destLng)
+        ) {
+          const restoredOrigin = {
+            lat: originLat,
+            lng: originLng,
+            address: originAddress,
+          };
+          const restoredDestination = {
+            lat: destLat,
+            lng: destLng,
+            address: destinationAddress,
+          };
+
+          setOrigin(restoredOrigin);
+          setDestination(restoredDestination);
+          calculateRoute(restoredOrigin, restoredDestination);
+        }
+      } catch (error) {
+        console.error("Error parsing URL parameters:", error);
+      }
+    }
+  }, [calculateRoute]);
 
   // Voice guidance when navigation starts
   useEffect(() => {
@@ -1085,6 +1155,7 @@ export const NavigationPage = ({ onNavigateToHome }) => {
                   isNavigating ? handleStopNavigation : handleStartNavigation
                 }
                 onClearRoute={handleClearRoute}
+                onShare={() => setShowShareModal(true)}
                 isNavigating={isNavigating}
                 className="w-full"
               />
@@ -1483,6 +1554,38 @@ export const NavigationPage = ({ onNavigateToHome }) => {
                   </div>
                 </div>
               )}
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <div className="text-sm text-gray-500 mb-1">Shareable Link</div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    value={
+                      origin && destination
+                        ? generateShareUrl()
+                        : "No route to share"
+                    }
+                    readOnly
+                    className="flex-1 px-2 py-1 text-xs border border-gray-300 rounded bg-white text-gray-700 truncate"
+                  />
+                  <button
+                    onClick={async () => {
+                      if (origin && destination) {
+                        try {
+                          await navigator.clipboard.writeText(
+                            generateShareUrl()
+                          );
+                          alert("Link copied to clipboard!");
+                        } catch (error) {
+                          console.error("Clipboard error:", error);
+                        }
+                      }
+                    }}
+                    className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button

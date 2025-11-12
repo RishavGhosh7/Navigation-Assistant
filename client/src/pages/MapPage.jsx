@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Map } from "../components/Map";
 import { WorkingMap } from "../components/WorkingMap";
 import { SearchBar } from "../components/SearchBar";
@@ -71,6 +71,41 @@ export const MapPage = () => {
     }
   }, []);
 
+  // Parse URL parameters to restore shared route
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const originParam = params.get("origin");
+    const originAddress = params.get("originAddress");
+    const destinationParam = params.get("destination");
+    const destinationAddress = params.get("destinationAddress");
+
+    if (originParam && destinationParam && originAddress && destinationAddress) {
+      try {
+        const [originLat, originLng] = originParam.split(",").map(Number);
+        const [destLat, destLng] = destinationParam.split(",").map(Number);
+
+        if (!isNaN(originLat) && !isNaN(originLng) && !isNaN(destLat) && !isNaN(destLng)) {
+          const restoredOrigin = {
+            lat: originLat,
+            lng: originLng,
+            address: originAddress,
+          };
+          const restoredDestination = {
+            lat: destLat,
+            lng: destLng,
+            address: destinationAddress,
+          };
+
+          setOrigin(restoredOrigin);
+          setDestination(restoredDestination);
+          calculateRoute(restoredOrigin, restoredDestination);
+        }
+      } catch (error) {
+        console.error("Error parsing URL parameters:", error);
+      }
+    }
+  }, [calculateRoute]);
+
   const handleOriginSelect = useCallback(
     (lng, lat, address) => {
       const newOrigin = { lng, lat, address };
@@ -101,6 +136,79 @@ export const MapPage = () => {
     setRoute(null);
     setRouteInfo(null);
     setError("");
+  };
+
+  // Share handlers
+  const generateShareUrl = () => {
+    if (!origin || !destination) return window.location.href;
+    
+    const params = new URLSearchParams({
+      origin: `${origin.lat},${origin.lng}`,
+      originAddress: origin.address,
+      destination: `${destination.lat},${destination.lng}`,
+      destinationAddress: destination.address,
+    });
+    
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+  };
+
+  const handleShare = async () => {
+    if (!routeInfo || !origin || !destination) {
+      alert("Please select a route first");
+      return;
+    }
+
+    const shareUrl = generateShareUrl();
+    const shareText = `Route: ${origin.address} → ${destination.address}\nDistance: ${(routeInfo.distance / 1000).toFixed(1)} km\nDuration: ${Math.round(routeInfo.duration / 60)} min\n\nView route: ${shareUrl}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Route",
+          text: `Route from ${origin.address} to ${destination.address}`,
+          url: shareUrl,
+        });
+        setShowShareModal(false);
+        return;
+      } catch (error) {
+        // User cancelled or error occurred, fall through to clipboard
+        if (error.name !== 'AbortError') {
+          console.error("Share error:", error);
+        }
+      }
+    }
+    
+    // Fallback to clipboard
+    try {
+      await navigator.clipboard.writeText(shareText);
+      alert("Route copied to clipboard!");
+      setShowShareModal(false);
+    } catch (error) {
+      console.error("Clipboard error:", error);
+      alert("Failed to copy route. Please try again.");
+    }
+  };
+
+  const handleSocialShare = (platform) => {
+    if (!routeInfo || !origin || !destination) {
+      alert("Please select a route first");
+      return;
+    }
+
+    const shareUrl = generateShareUrl();
+    const shareText = `Route: ${origin.address} → ${destination.address}`;
+    let url = "";
+
+    if (platform === "twitter") {
+      url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+    } else if (platform === "facebook") {
+      url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    }
+
+    if (url) {
+      window.open(url, "_blank", "width=600,height=400");
+      setShowShareModal(false);
+    }
   };
 
   const handleStartNavigation = () => {
@@ -688,6 +796,7 @@ export const MapPage = () => {
                 routeInfo={routeInfo}
                 onStartNavigation={handleStartNavigation}
                 onClearRoute={handleClearRoute}
+                onShare={() => setShowShareModal(true)}
                 className="w-full"
               />
             </div>
@@ -1036,20 +1145,22 @@ export const MapPage = () => {
                   <input
                     type="text"
                     value={
-                      routeInfo
-                        ? `Route from ${origin?.address} to ${destination?.address}`
+                      routeInfo && origin && destination
+                        ? generateShareUrl()
                         : "No route to share"
                     }
                     readOnly
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm"
                   />
                   <button
-                    onClick={() => {
-                      if (routeInfo) {
-                        navigator.clipboard.writeText(
-                          `Route from ${origin?.address} to ${destination?.address}`
-                        );
-                        alert("Route copied to clipboard!");
+                    onClick={async () => {
+                      if (routeInfo && origin && destination) {
+                        try {
+                          await navigator.clipboard.writeText(generateShareUrl());
+                          alert("Link copied to clipboard!");
+                        } catch (error) {
+                          console.error("Clipboard error:", error);
+                        }
                       }
                     }}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
@@ -1059,7 +1170,10 @@ export const MapPage = () => {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <button className="flex items-center justify-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <button
+                  onClick={() => handleSocialShare("twitter")}
+                  className="flex items-center justify-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   <svg
                     className="w-5 h-5 text-blue-600"
                     fill="currentColor"
@@ -1069,7 +1183,10 @@ export const MapPage = () => {
                   </svg>
                   <span className="text-sm">Twitter</span>
                 </button>
-                <button className="flex items-center justify-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <button
+                  onClick={() => handleSocialShare("facebook")}
+                  className="flex items-center justify-center space-x-2 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
                   <svg
                     className="w-5 h-5 text-blue-600"
                     fill="currentColor"
@@ -1080,6 +1197,12 @@ export const MapPage = () => {
                   <span className="text-sm">Facebook</span>
                 </button>
               </div>
+              <button
+                onClick={handleShare}
+                className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+              >
+                Share via Web Share API
+              </button>
             </div>
           </div>
         </div>
